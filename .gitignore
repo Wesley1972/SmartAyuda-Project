@@ -1,0 +1,10 @@
+# Ignore Python virtual environment files
+.venv/
+venv/
+__pycache__/
+
+# Ignore PyCharm settings
+.idea/
+
+# Ignore the SQLite database (so you don't accidentally overwrite production data later)
+db.sqlite3
