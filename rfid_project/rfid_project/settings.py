@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'scanner',  # <-- Adding this line
+    'scanner',  # <-- Adding this line to connect to Arduino scanner
 ]
 
 MIDDLEWARE = [
