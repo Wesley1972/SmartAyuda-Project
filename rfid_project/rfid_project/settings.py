@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'scanner',  # <-- Adding this line to connect to Arduino scanner
+    'scanner',  # <-- Adding this line to connect to Arduino scanner folder
 ]
 
 MIDDLEWARE = [
@@ -116,7 +116,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
-
+import os
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'scanner', 'static')]
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
