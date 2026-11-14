@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartAyuda - Relief Distribution Desk</title>
+
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: #007bff;
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        /* --- Scanner Banner Styles --- */
+        .scanner-banner {
+            background-color: #f8f9fa;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .scanner-banner.linked {
+            border: 2px solid #28a745;
+            background-color: #d4edda;
+        }
+
+        .scanner-banner.unlinked {
+            border: 2px solid #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .scanner-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scanner-details {
+            font-size: 1.1em;
+            color: #555;
+            margin: 0;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: #007bff;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        }
+
+        .register-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .register-btn:hover {
+            background-color: #c82333;
+        }
+
+        .edit-btn {
+            background-color: #ffc107;
+            color: #333;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .edit-btn:hover {
+            background-color: #e0a800;
+        }
+
+        /* Testing Buttons */
+        .dev-buttons {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .dev-buttons button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #eee;
+            font-size: 0.9em;
+        }
+
+        .dev-buttons button:hover {
+            background: #ddd;
+        }
+
+        /* Form Styles */
+        .date-display {
+            text-align: center;
+            font-size: 1.2em;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        /* Location Input Style */
+        .input-single {
+            display: flex;
+            margin-bottom: 15px;
+        }
+
+        .input-single input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-single input:focus {
+            border-color: #007bff;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 1.1em;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #007bff;
+        }
+
+        .input-group button {
+            background: #28a745;
+            color: white;
+            padding: 0 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .input-group button:hover {
+            background: #218838;
+        }
+
+        /* History Log Section */
+        .history-section {
+            margin-top: 40px;
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+
+        .history-section h3 {
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        /* List Styling for History */
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-item {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .history-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin: 0;
+        }
+
+        .history-location {
+            font-size: 0.95em;
+            color: #007bff;
+            font-weight: 500;
+            margin: 5px 0 0 0;
+        }
+
+        .history-time {
+            font-size: 0.9em;
+            color: #666;
+            margin: 5px 0 0 0;
+            font-style: italic;
+        }
+
+        /* Updated Actions to Stack Vertically */
+        .history-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .history-edit-btn {
+            background-color: #ffc107;
+            color: #333;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .history-edit-btn:hover {
+            background-color: #e0a800;
+        }
+
+        /* NEW: Styles for the Recipient Counter Button */
+        .recipient-count-btn {
+            font-size: 0.85em;
+            color: #17a2b8;
+            font-weight: 600;
+            background-color: #e9ecef;
+            padding: 5px 10px;
+            border: 1px solid #17a2b8;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .recipient-count-btn:hover {
+            background-color: #17a2b8;
+            color: white;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>Relief Distribution Desk</h1>
+        </div>
+
+        <!-- --- Scanner Status Banner --- -->
+        <div class="scanner-banner" id="scanner-banner">
+            <h3 class="scanner-title" id="scanner-title">
+                <span class="status-dot" id="status-dot"></span> Waiting for Card Scan...
+            </h3>
+            <p class="scanner-details" id="scanner-details">Tap an RFID card to verify link status.</p>
+            <!-- Updated Buttons with URL Parameters -->
+            <button class="register-btn" id="register-btn" onclick="window.location.href='edit_user.html?action=register'">Register Card</button>
+            <button class="edit-btn" id="edit-btn" onclick="window.location.href='edit_user.html?action=edit'">Edit Details</button>
+        </div>
+
+        <!-- --- Dev Testing Buttons --- -->
+        <div class="dev-buttons">
+            <button onclick="simulateScan(true)">Simulate Linked Card</button>
+            <button onclick="simulateScan(false)">Simulate Unlinked Card</button>
+            <button onclick="resetScanner()">Reset</button>
+        </div>
+
+        <!-- Auto-populated Date -->
+        <div class="date-display" id="display-date"></div>
+
+        <!-- Location Input -->
+        <div class="input-single">
+            <input type="text" id="location-input" placeholder="Enter distribution location (e.g., San Jose Covered Court)...">
+        </div>
+
+        <!-- Supply Input and Save Button -->
+        <div class="input-group">
+            <input type="text" id="supplies-input" placeholder="Enter supplies given (e.g., 5kg Rice, 2 Water)...">
+            <button onclick="saveSupply()">Save</button>
+        </div>
+
+        <!-- History Area -->
+        <div class="history-section">
+            <h3>Recent Saved Records</h3>
+            <ul class="history-list" id="history-list">
+                <li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;">
+                    <em>No supplies logged for this session yet.</em>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+    const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
+
+    function saveSupply() {
+        const location = document.getElementById('location-input').value;
+        const supplies = document.getElementById('supplies-input').value;
+
+        if(location.trim() === "" || supplies.trim() === "") {
+            alert("Please fill in both the location and the supplies.");
+            return;
+        }
+
+        const now = new Date();
+        const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+        const dateString = now.toLocaleDateString('en-US', headerDateOptions);
+        const timeString = now.toLocaleTimeString('en-US', timeOptions);
+
+        const placeholder = document.getElementById('placeholder-history');
+        if (placeholder) {
+            placeholder.remove();
+        }
+
+        const itemId = 'history-item-' + Date.now();
+
+        const newHistoryHTML = `
+            <li class="history-item" id="${itemId}">
+                <div>
+                    <p class="history-text" id="text-${itemId}">${supplies}</p>
+                    <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
+                    <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
+                </div>
+                <div class="history-actions">
+                    <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
+                    <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+                </div>
+            </li>
+        `;
+
+        const historyList = document.getElementById('history-list');
+        historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
+
+        document.getElementById('location-input').value = "";
+        document.getElementById('supplies-input').value = "";
+        document.getElementById('supplies-input').focus();
+    }
+
+    // --- 1. LIVE POLLING LOGIC ---
+    function pollScanner() {
+        fetch('/api/check_scanner/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    updateScannerBanner(data.scan_data);
+                }
+            })
+            .catch(error => console.error('Error checking scanner:', error));
+    }
+
+    // Start listening to the backend automatically every 1.5 seconds
+    setInterval(pollScanner, 1500);
+
+    // --- 2. UPDATE UI BASED ON DATABASE CHECK ---
+    function updateScannerBanner(scanData) {
+        const banner = document.getElementById('scanner-banner');
+        const title = document.getElementById('scanner-title');
+        const details = document.getElementById('scanner-details');
+        const registerBtn = document.getElementById('register-btn');
+        const editBtn = document.getElementById('edit-btn');
+
+        banner.className = 'scanner-banner';
+
+        if (scanData.is_linked) {
+            banner.classList.add('linked');
+            title.innerHTML = '✅ Card Recognized';
+            details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+            registerBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+            editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;
+        } else {
+            banner.classList.add('unlinked');
+            title.innerHTML = '⚠️ Unregistered Card';
+            details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+            registerBtn.style.display = 'inline-block';
+            editBtn.style.display = 'none';
+            registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${scanData.uid}`;
+        }
+    }
+
+    function resetScanner() {
+        const banner = document.getElementById('scanner-banner');
+        const title = document.getElementById('scanner-title');
+        const details = document.getElementById('scanner-details');
+        const registerBtn = document.getElementById('register-btn');
+        const editBtn = document.getElementById('edit-btn');
+
+        banner.className = 'scanner-banner';
+        title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';
+        details.innerHTML = 'Tap an RFID card to verify link status.';
+        registerBtn.style.display = 'none';
+        editBtn.style.display = 'none';
+    }
+
+    function editHistoryItem(itemId) {
+        const currentSavedText = document.getElementById('text-' + itemId).innerText;
+        const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');
+
+        document.getElementById('supplies-input').value = currentSavedText;
+        document.getElementById('location-input').value = currentSavedLoc;
+        document.getElementById(itemId).remove();
+
+        const historyList = document.getElementById('history-list');
+        if (historyList.children.length === 0) {
+            historyList.innerHTML = `<li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;"><em>No supplies logged for this session yet.</em></li>`;
+        }
+
+        document.getElementById('supplies-input').focus();
+    }
+</script>
+
+    <!-- JavaScript to handle the UI logic -->
+<!--    <script>-->
+<!--        const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };-->
+<!--        document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);-->
+
+<!--        function saveSupply() {-->
+<!--            const location = document.getElementById('location-input').value;-->
+<!--            const supplies = document.getElementById('supplies-input').value;-->
+
+<!--            // Enforce filling both fields-->
+<!--            if (location.trim() === "" || supplies.trim() === "") {-->
+<!--                alert("Please fill in both the location and the supplies.");-->
+<!--                return;-->
+<!--            }-->
+
+<!--            const now = new Date();-->
+<!--            const timeOptions = {hour: 'numeric', minute: '2-digit', hour12: true};-->
+<!--            const dateString = now.toLocaleDateString('en-US', headerDateOptions);-->
+<!--            const timeString = now.toLocaleTimeString('en-US', timeOptions);-->
+
+<!--            const placeholder = document.getElementById('placeholder-history');-->
+<!--            if (placeholder) {-->
+<!--                placeholder.remove();-->
+<!--            }-->
+
+<!--            // Generate a unique ID using Date.now()-->
+<!--            const itemId = 'history-item-' + Date.now();-->
+
+<!--            // Updated HTML Block to include the clickable button below the edit button-->
+<!--            const newHistoryHTML = `-->
+<!--                <li class="history-item" id="${itemId}">-->
+<!--                    <div>-->
+<!--                        <p class="history-text" id="text-${itemId}">${supplies}</p>-->
+<!--                        <p class="history-location" id="loc-${itemId}">Location: ${location}</p>-->
+<!--                        <p class="history-time">Saved on: ${dateString} at ${timeString}</p>-->
+<!--                    </div>-->
+<!--                    <div class="history-actions">-->
+<!--                        <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>-->
+<!--                        <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>-->
+<!--                    </div>-->
+<!--                </li>-->
+<!--            `;-->
+
+<!--            const historyList = document.getElementById('history-list');-->
+<!--            historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);-->
+
+<!--            // Clear the boxes automatically-->
+<!--            document.getElementById('location-input').value = "";-->
+<!--            document.getElementById('supplies-input').value = "";-->
+
+<!--            // Return focus to supplies to keep workflow fast-->
+<!--            document.getElementById('supplies-input').focus();-->
+<!--        }-->
+
+<!--        // -&#45;&#45; 1. NEW LIVE POLLING LOGIC -&#45;&#45;-->
+<!--        function pollScanner() {-->
+<!--        fetch('/api/check_scanner/')-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                if (data.status === 'success') {-->
+<!--                    // The database caught a scan! Update the UI automatically.-->
+<!--                    updateScannerBanner(data.scan_data);-->
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => console.error('Error checking scanner:', error));-->
+<!--        }-->
+
+<!--        // Start listening to the backend automatically every 1.5 seconds-->
+<!--        setInterval(pollScanner, 1500);-->
+
+<!--        // -&#45;&#45; 2. UPDATE UI BASED ON DATABASE CHECK -&#45;&#45;-->
+<!--        function updateScannerBanner(scanData) {-->
+<!--            const banner = document.getElementById('scanner-banner');-->
+<!--            const title = document.getElementById('scanner-title');-->
+<!--            const details = document.getElementById('scanner-details');-->
+<!--            const registerBtn = document.getElementById('register-btn');-->
+<!--            const editBtn = document.getElementById('edit-btn');-->
+
+<!--            // Reset styles-->
+<!--            banner.className = 'scanner-banner';-->
+
+<!--            if (scanData.is_linked) {-->
+<!--                // Registered Card Detected-->
+<!--                banner.classList.add('linked');-->
+<!--                title.innerHTML = '✅ Card Recognized';-->
+<!--                details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;-->
+<!--                registerBtn.style.display = 'none';-->
+<!--                editBtn.style.display = 'inline-block';-->
+
+<!--                // Pass the specific UID into the URL so the edit page knows who to load-->
+<!--                editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;-->
+<!--            } else {-->
+<!--                // Unregistered Card Detected-->
+<!--                banner.classList.add('unlinked');-->
+<!--                title.innerHTML = '⚠️ Unregistered Card';-->
+<!--                details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;-->
+<!--                registerBtn.style.display = 'inline-block';-->
+<!--                editBtn.style.display = 'none';-->
+
+<!--                // Pass the specific UID into the URL for registration-->
+<!--                registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${scanData.uid}`;-->
+<!--            }-->
+<!--        }-->
+
+<!--        function resetScanner() {-->
+<!--            const banner = document.getElementById('scanner-banner');-->
+<!--            const title = document.getElementById('scanner-title');-->
+<!--            const details = document.getElementById('scanner-details');-->
+<!--            const registerBtn = document.getElementById('register-btn');-->
+<!--            const editBtn = document.getElementById('edit-btn');-->
+
+<!--            banner.className = 'scanner-banner';-->
+<!--            title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';-->
+<!--            details.innerHTML = 'Tap an RFID card to verify link status.';-->
+<!--            registerBtn.style.display = 'none';-->
+<!--            editBtn.style.display = 'none';-->
+<!--        }-->
+
+<!--        function editHistoryItem(itemId) {-->
+<!--            const currentSavedText = document.getElementById('text-' + itemId).innerText;-->
+<!--            const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');-->
+
+<!--            document.getElementById('supplies-input').value = currentSavedText;-->
+<!--            document.getElementById('location-input').value = currentSavedLoc;-->
+
+<!--            document.getElementById(itemId).remove();-->
+
+<!--            const historyList = document.getElementById('history-list');-->
+<!--            if (historyList.children.length === 0) {-->
+<!--                historyList.innerHTML = `<li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;"><em>No supplies logged for this session yet.</em></li>`;-->
+<!--            }-->
+
+<!--            document.getElementById('supplies-input').focus();-->
+<!--        }-->
+<!--    </script>-->
+
+</body>
+</html>
+

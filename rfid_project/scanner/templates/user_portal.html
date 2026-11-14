@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartAyuda - System Login</title>
+
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+            color: #333;
+        }
+
+        /* Centered smaller container specifically for the login portal */
+        .login-container {
+            max-width: 600px;
+            margin: 80px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: #007bff;
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+        }
+
+        .header p {
+            color: #666;
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        /* --- Scanner Banner Styles --- */
+        .scanner-banner {
+            background-color: #f8f9fa;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .scanner-banner.linked {
+            border: 2px solid #28a745;
+            background-color: #d4edda;
+        }
+
+        .scanner-banner.unlinked {
+            border: 2px solid #dc3545;
+            background-color: #f8d7da;
+        }
+
+        .scanner-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin: 0 0 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scanner-details {
+            font-size: 1.1em;
+            color: #555;
+            margin: 0;
+        }
+
+        .status-dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            background-color: #007bff;
+            border-radius: 50%;
+            margin-right: 12px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(0, 123, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
+        }
+
+        /* Manual Input Area */
+        .manual-input-area {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .manual-input-area p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 1em;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+            max-width: 300px;
+        }
+
+        .input-group input:focus {
+            border-color: #007bff;
+        }
+
+        .input-group button {
+            background: #007bff;
+            color: white;
+            padding: 0 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .input-group button:hover {
+            background: #0056b3;
+        }
+
+        /* Testing Buttons */
+        .dev-buttons {
+            text-align: center;
+            margin-top: 40px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .dev-buttons p {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .dev-buttons button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #eee;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .dev-buttons button:hover {
+            background: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="header">
+            <h1>SmartAyuda</h1>
+            <p>Disaster Relief Public Record System</p>
+        </div>
+
+        <!-- --- Scanner Status Banner --- -->
+        <div class="scanner-banner" id="scanner-banner">
+            <h3 class="scanner-title" id="scanner-title">
+                <span class="status-dot" id="status-dot"></span> Waiting for Card Scan...
+            </h3>
+            <p class="scanner-details" id="scanner-details">Tap your RFID card to log in automatically.</p>
+        </div>
+
+        <!-- --- Manual Name Input Area --- -->
+        <div class="manual-input-area">
+            <p>Don't have your card? Enter your name manually to search records.</p>
+            <div class="input-group">
+                <input type="text" id="manual-name-input" placeholder="Enter Full Name...">
+                <button onclick="manualLogin()">Search</button>
+            </div>
+        </div>
+
+        <!-- --- Dev Testing Buttons --- -->
+        <div class="dev-buttons">
+            <p>Developer Simulation Controls</p>
+            <button onclick="simulateLogin('admin')">Scan Admin Card</button>
+            <button onclick="simulateLogin('user')">Scan User Card</button>
+            <button onclick="simulateLogin('unregistered')">Scan Unknown Card</button>
+        </div>
+    </div>
+
+    <!-- JavaScript to handle the UI login logic -->
+    <script>
+        function simulateLogin(role) {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+
+            // Reset banner classes
+            banner.className = 'scanner-banner';
+
+            if (role === 'admin') {
+                banner.classList.add('linked');
+                title.innerHTML = '✅ Admin Recognized';
+                details.innerHTML = 'Welcome, Administrator. Logging you in...';
+
+                // Automatically redirect to the admin portal after 1.5 seconds
+                setTimeout(() => {
+                    window.location.href = 'admin_portal.html';
+                }, 1500);
+
+            } else if (role === 'user') {
+                banner.classList.add('linked');
+                title.innerHTML = '✅ User Recognized';
+                details.innerHTML = 'Welcome, Juan Dela Cruz. Accessing your records...';
+
+                // Automatically redirect to the user's view (adjust filename as needed)
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+
+            } else {
+                banner.classList.add('unlinked');
+                title.innerHTML = '⚠️ Access Denied';
+                details.innerHTML = 'Unregistered card. Please see an administrator to register this card.';
+
+                // Reset back to scanning mode after 3 seconds
+                setTimeout(resetScanner, 3000);
+            }
+        }
+
+        function manualLogin() {
+            const nameInput = document.getElementById('manual-name-input').value;
+
+            if (nameInput.trim() === "") {
+                alert("Please enter a name to search.");
+                return;
+            }
+
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+
+            banner.className = 'scanner-banner linked';
+            title.innerHTML = '✅ Name Recognized';
+            details.innerHTML = 'Welcome, ' + nameInput + '. Accessing your records...';
+
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+
+        function resetScanner() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+
+            banner.className = 'scanner-banner';
+            title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';
+            details.innerHTML = 'Tap your RFID card to log in automatically.';
+        }
+    </script>
+
+</body>
+</html>
