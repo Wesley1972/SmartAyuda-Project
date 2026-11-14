@@ -332,8 +332,8 @@
 
         <!-- --- Dev Testing Buttons --- -->
         <div class="dev-buttons">
-            <button onclick="simulateScan(true)">Simulate Linked Card</button>
-            <button onclick="simulateScan(false)">Simulate Unlinked Card</button>
+            <button onclick="simulateScanLinkCard()">Simulate Linked Card</button>
+            <button onclick="simulateScanUnlinkCard()">Simulate Unlinked Card</button>
             <button onclick="resetScanner()">Reset</button>
         </div>
 
@@ -365,6 +365,50 @@
     <script>
     const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
+
+    // --- Dev Testing Functions ---
+    function simulateScanLinkCard() {
+        const banner = document.getElementById('scanner-banner');
+        const title = document.getElementById('scanner-title');
+        const details = document.getElementById('scanner-details');
+        const registerBtn = document.getElementById('register-btn');
+        const editBtn = document.getElementById('edit-btn');
+
+        // Create a mock scanData object for the simulation
+        const mockScanData = {
+            name: "Juan Dela Cruz",
+            uid: "A1B2C3D4"
+        };
+
+        banner.className = 'scanner-banner linked';
+        title.innerHTML = '✅ Card Recognized';
+        details.innerHTML = `<strong>Name:</strong> ${mockScanData.name} <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
+
+        registerBtn.style.display = 'none';
+        editBtn.style.display = 'inline-block';
+        editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${mockScanData.uid}`;
+    }
+
+    function simulateScanUnlinkCard() {
+        const banner = document.getElementById('scanner-banner');
+        const title = document.getElementById('scanner-title');
+        const details = document.getElementById('scanner-details');
+        const registerBtn = document.getElementById('register-btn');
+        const editBtn = document.getElementById('edit-btn');
+
+        // Create a mock scanData object for the simulation
+        const mockScanData = {
+            uid: "E5F6G7H8"
+        };
+
+        banner.className = 'scanner-banner unlinked';
+        title.innerHTML = '⚠️ Unregistered Card';
+        details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
+
+        registerBtn.style.display = 'inline-block';
+        editBtn.style.display = 'none';
+        registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${mockScanData.uid}`;
+    }
 
     function saveSupply() {
         const location = document.getElementById('location-input').value;
