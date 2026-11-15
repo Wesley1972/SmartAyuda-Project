@@ -138,11 +138,24 @@
             border-radius: 4px;
             background: #eee;
             font-size: 0.9em;
+
         }
 
         .dev-buttons button:hover {
             background: #ddd;
         }
+        /*-----------------------------------------------------------------------------------------*/
+        .dev-buttons button.active-assign {
+            background-color: #28a745;
+            color: white;
+            border-color: #28a745;
+            font-weight: bold;
+        }
+
+        .dev-buttons button.active-assign:hover {
+            background-color: #218838;
+        }
+        /*-----------------------------------------------------------------------------------------*/
 
         /* Form Styles */
         .date-display {
@@ -326,12 +339,13 @@
             </h3>
             <p class="scanner-details" id="scanner-details">Tap an RFID card to verify link status.</p>
             <!-- Updated Buttons with URL Parameters -->
-            <button class="register-btn" id="register-btn" onclick="window.location.href='edit_user.html?action=register'">Register Card</button>
+            <button class="register-btn" id="register-btn" onclick="window.location.href='save_user.html?action=register'">Register Card</button>
             <button class="edit-btn" id="edit-btn" onclick="window.location.href='edit_user.html?action=edit'">Edit Details</button>
         </div>
 
         <!-- --- Dev Testing Buttons --- -->
         <div class="dev-buttons">
+            <button id="assign-supply-btn" onclick="activateAssignSupply()">Assign Supply</button>
             <button onclick="simulateScanLinkCard()">Simulate Linked Card</button>
             <button onclick="simulateScanUnlinkCard()">Simulate Unlinked Card</button>
             <button onclick="resetScanner()">Reset</button>
@@ -340,16 +354,18 @@
         <!-- Auto-populated Date -->
         <div class="date-display" id="display-date"></div>
 
-        <!-- Location Input -->
-        <div class="input-single">
-            <input type="text" id="location-input" placeholder="Enter distribution location (e.g., San Jose Covered Court)...">
-        </div>
+        <form id="supply-form" onsubmit="saveSupply(event)">
+            <!-- Location Input -->
+            <div class="input-single">
+                <input type="text" id="location-input" placeholder="Enter distribution location (e.g., San Jose Covered Court)..." required>
+            </div>
 
-        <!-- Supply Input and Save Button -->
-        <div class="input-group">
-            <input type="text" id="supplies-input" placeholder="Enter supplies given (e.g., 5kg Rice, 2 Water)...">
-            <button onclick="saveSupply()">Save</button>
-        </div>
+            <!-- Supply Input and Save Button -->
+            <div class="input-group">
+                <input type="text" id="supplies-input" placeholder="Enter supplies given (e.g., 5kg Rice, 2 Water)..." required>
+                <button type="submit">Save</button>
+            </div>
+        </form>
 
         <!-- History Area -->
         <div class="history-section">
@@ -363,153 +379,301 @@
     </div>
 
     <script>
-    const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
+        const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
 
-    // --- Dev Testing Functions ---
-    function simulateScanLinkCard() {
-        const banner = document.getElementById('scanner-banner');
-        const title = document.getElementById('scanner-title');
-        const details = document.getElementById('scanner-details');
-        const registerBtn = document.getElementById('register-btn');
-        const editBtn = document.getElementById('edit-btn');
-
-        // Create a mock scanData object for the simulation
-        const mockScanData = {
-            name: "Juan Dela Cruz",
-            uid: "A1B2C3D4"
-        };
-
-        banner.className = 'scanner-banner linked';
-        title.innerHTML = '✅ Card Recognized';
-        details.innerHTML = `<strong>Name:</strong> ${mockScanData.name} <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
-
-        registerBtn.style.display = 'none';
-        editBtn.style.display = 'inline-block';
-        editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${mockScanData.uid}`;
-    }
-
-    function simulateScanUnlinkCard() {
-        const banner = document.getElementById('scanner-banner');
-        const title = document.getElementById('scanner-title');
-        const details = document.getElementById('scanner-details');
-        const registerBtn = document.getElementById('register-btn');
-        const editBtn = document.getElementById('edit-btn');
-
-        // Create a mock scanData object for the simulation
-        const mockScanData = {
-            uid: "E5F6G7H8"
-        };
-
-        banner.className = 'scanner-banner unlinked';
-        title.innerHTML = '⚠️ Unregistered Card';
-        details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
-
-        registerBtn.style.display = 'inline-block';
-        editBtn.style.display = 'none';
-        registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${mockScanData.uid}`;
-    }
-
-    function saveSupply() {
-        const location = document.getElementById('location-input').value;
-        const supplies = document.getElementById('supplies-input').value;
-
-        if(location.trim() === "" || supplies.trim() === "") {
-            alert("Please fill in both the location and the supplies.");
-            return;
+        // Helper function to turn the Assign Supply button back to normal gray
+        function clearAssignSupplyBtn() {
+            const assignBtn = document.getElementById('assign-supply-btn');
+            if (assignBtn) {
+                assignBtn.classList.remove('active-assign');
+                assignBtn.style.backgroundColor = '';
+                assignBtn.style.color = '';
+                assignBtn.style.borderColor = '';
+            }
         }
 
-        const now = new Date();
-        const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-        const dateString = now.toLocaleDateString('en-US', headerDateOptions);
-        const timeString = now.toLocaleTimeString('en-US', timeOptions);
+        function activateAssignSupply() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+            const registerBtn = document.getElementById('register-btn');
+            const editBtn = document.getElementById('edit-btn');
+            const assignBtn = document.getElementById('assign-supply-btn');
 
-        const placeholder = document.getElementById('placeholder-history');
-        if (placeholder) {
-            placeholder.remove();
+            // Turn the Assign Supply button green
+            assignBtn.classList.add('active-assign');
+
+            // Update scanner banner to prompt for card tap
+            banner.className = 'scanner-banner';
+            title.innerHTML = '<span class="status-dot" id="status-dot"></span> Tap card to assign supply';
+            details.innerHTML = 'Tap a registered RFID card to assign the current supply record.';
+
+            registerBtn.style.display = 'none';
+            editBtn.style.display = 'none';
         }
 
-        const itemId = 'history-item-' + Date.now();
+        // --- Dev Testing Functions ---
+        function simulateScanLinkCard() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+            const registerBtn = document.getElementById('register-btn');
+            const editBtn = document.getElementById('edit-btn');
 
-        const newHistoryHTML = `
-            <li class="history-item" id="${itemId}">
-                <div>
-                    <p class="history-text" id="text-${itemId}">${supplies}</p>
-                    <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
-                    <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
-                </div>
-                <div class="history-actions">
-                    <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
-                    <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
-                </div>
-            </li>
-        `;
+            clearAssignSupplyBtn()
 
-        const historyList = document.getElementById('history-list');
-        historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
+            // Create a mock scanData object for the simulation
+            const mockScanData = {
+                name: "Juan Dela Cruz",
+                uid: "A1B2C3D4"
+            };
 
-        document.getElementById('location-input').value = "";
-        document.getElementById('supplies-input').value = "";
-        document.getElementById('supplies-input').focus();
-    }
+            banner.className = 'scanner-banner linked';
+            title.innerHTML = '✅ Card Recognized';
+            details.innerHTML = `<strong>Name:</strong> ${mockScanData.name} <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
 
-    // --- 1. LIVE POLLING LOGIC ---
-    function pollScanner() {
-        fetch('/api/check_scanner/')
+            registerBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+            editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${mockScanData.uid}`;
+        }
+
+        function simulateScanUnlinkCard() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+            const registerBtn = document.getElementById('register-btn');
+            const editBtn = document.getElementById('edit-btn');
+
+            clearAssignSupplyBtn()
+
+            // Create a mock scanData object for the simulation
+            const mockScanData = {
+                uid: "E5F6G7H8"
+            };
+
+            banner.className = 'scanner-banner unlinked';
+            title.innerHTML = '⚠️ Unregistered Card';
+            details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
+
+            registerBtn.style.display = 'inline-block';
+            editBtn.style.display = 'none';
+            registerBtn.onclick = () => window.location.href = `save_user.html?action=register&uid=${mockScanData.uid}`;
+        }
+
+        // --- Helper Function to Render a Record on Screen ---
+        function renderHistoryItem(id, location, supplies, dateObj) {
+            const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+            const dateString = dateObj.toLocaleDateString('en-US', headerDateOptions);
+            const timeString = dateObj.toLocaleTimeString('en-US', timeOptions);
+
+            const placeholder = document.getElementById('placeholder-history');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const itemId = 'history-item-' + id;
+
+            const newHistoryHTML = `
+                <li class="history-item" id="${itemId}">
+                    <div>
+                        <p class="history-text" id="text-${itemId}">${supplies}</p>
+                        <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
+                        <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
+                    </div>
+                    <div class="history-actions">
+                        <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
+                        <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+                    </div>
+                </li>
+            `;
+
+            const historyList = document.getElementById('history-list');
+            historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
+        }
+
+        // --- Load Previously Saved Records on Page Refresh ---
+        function loadSavedSupplies() {
+            fetch('/api/get_admin_logs/')
+                .then(response => response.json())
+                .then(data => {
+                    data.logs.forEach(log => {
+                        const savedDate = new Date(log.timestamp);
+                        renderHistoryItem(log.id, log.location, log.supplies, savedDate);
+                    });
+                })
+                .catch(error => console.error('Error loading saved supplies:', error));
+        }
+
+        function saveSupply(event) {
+            event.preventDefault(); // Prevents the form from refreshing the page
+
+            const location = document.getElementById('location-input').value;
+            const supplies = document.getElementById('supplies-input').value;
+
+            if (location.trim() === "" || supplies.trim() === "") {
+                alert("Please fill in both the location and the supplies.");
+                return;
+            }
+
+            // Send the location and supplies to Django to save in the database
+            fetch('/api/save_supply/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    location: location,
+                    supplies: supplies
+                })
+            })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    updateScannerBanner(data.scan_data);
+                    const now = new Date();
+                    const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+                    const dateString = now.toLocaleDateString('en-US', headerDateOptions);
+                    const timeString = now.toLocaleTimeString('en-US', timeOptions);
+
+                    const placeholder = document.getElementById('placeholder-history');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+
+                    const itemId = 'history-item-' + data.id;
+
+                    const newHistoryHTML = `
+                        <li class="history-item" id="${itemId}">
+                            <div>
+                                <p class="history-text" id="text-${itemId}">${supplies}</p>
+                                <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
+                                <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
+                            </div>
+                            <div class="history-actions">
+                                <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
+                                <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+                            </div>
+                        </li>
+                    `;
+
+                    const historyList = document.getElementById('history-list');
+                    historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
+
+                    document.getElementById('location-input').value = "";
+                    document.getElementById('supplies-input').value = "";
+                    document.getElementById('supplies-input').focus();
+                } else {
+                    alert("Database Error: " + data.message);
                 }
             })
-            .catch(error => console.error('Error checking scanner:', error));
-    }
-
-    // Start listening to the backend automatically every 1.5 seconds
-    setInterval(pollScanner, 1500);
-
-    // --- 2. UPDATE UI BASED ON DATABASE CHECK ---
-    function updateScannerBanner(scanData) {
-        const banner = document.getElementById('scanner-banner');
-        const title = document.getElementById('scanner-title');
-        const details = document.getElementById('scanner-details');
-        const registerBtn = document.getElementById('register-btn');
-        const editBtn = document.getElementById('edit-btn');
-
-        banner.className = 'scanner-banner';
-
-        if (scanData.is_linked) {
-            banner.classList.add('linked');
-            title.innerHTML = '✅ Card Recognized';
-            details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
-            registerBtn.style.display = 'none';
-            editBtn.style.display = 'inline-block';
-            editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;
-        } else {
-            banner.classList.add('unlinked');
-            title.innerHTML = '⚠️ Unregistered Card';
-            details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
-            registerBtn.style.display = 'inline-block';
-            editBtn.style.display = 'none';
-            registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${scanData.uid}`;
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Network Error: Could not connect to the database.");
+            });
         }
-    }
 
-    function resetScanner() {
-        const banner = document.getElementById('scanner-banner');
-        const title = document.getElementById('scanner-title');
-        const details = document.getElementById('scanner-details');
-        const registerBtn = document.getElementById('register-btn');
-        const editBtn = document.getElementById('edit-btn');
+        loadSavedSupplies();
 
-        banner.className = 'scanner-banner';
-        title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';
-        details.innerHTML = 'Tap an RFID card to verify link status.';
-        registerBtn.style.display = 'none';
-        editBtn.style.display = 'none';
-    }
+        // function saveSupply() {
+        //     const location = document.getElementById('location-input').value;
+        //     const supplies = document.getElementById('supplies-input').value;
+        //
+        //     if(location.trim() === "" || supplies.trim() === "") {
+        //         alert("Please fill in both the location and the supplies.");
+        //         return;
+        //     }
+        //
+        //     const now = new Date();
+        //     const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+        //     const dateString = now.toLocaleDateString('en-US', headerDateOptions);
+        //     const timeString = now.toLocaleTimeString('en-US', timeOptions);
+        //
+        //     const placeholder = document.getElementById('placeholder-history');
+        //     if (placeholder) {
+        //         placeholder.remove();
+        //     }
+        //
+        //     const itemId = 'history-item-' + Date.now();
+        //
+        //     const newHistoryHTML = `
+        //         <li class="history-item" id="${itemId}">
+        //             <div>
+        //                 <p class="history-text" id="text-${itemId}">${supplies}</p>
+        //                 <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
+        //                 <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
+        //             </div>
+        //             <div class="history-actions">
+        //                 <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
+        //                 <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+        //             </div>
+        //         </li>
+        //     `;
+        //
+        //     const historyList = document.getElementById('history-list');
+        //     historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
+        //
+        //     document.getElementById('location-input').value = "";
+        //     document.getElementById('supplies-input').value = "";
+        //     document.getElementById('supplies-input').focus();
+        // }
 
-    function editHistoryItem(itemId) {
+        // --- 1. LIVE POLLING LOGIC ---
+        function pollScanner() {
+            fetch('/api/check_scanner/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateScannerBanner(data.scan_data);
+                    }
+                })
+                .catch(error => console.error('Error checking scanner:', error));
+        }
+
+        // Start listening to the backend automatically every 1.5 seconds
+        setInterval(pollScanner, 1500);
+
+        // --- 2. UPDATE UI BASED ON DATABASE CHECK ---
+        function updateScannerBanner(scanData) {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+            const registerBtn = document.getElementById('register-btn');
+            const editBtn = document.getElementById('edit-btn');
+
+            banner.className = 'scanner-banner';
+
+            if (scanData.is_linked) {
+                banner.classList.add('linked');
+                title.innerHTML = '✅ Card Recognized';
+                details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+                registerBtn.style.display = 'none';
+                editBtn.style.display = 'inline-block';
+                editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;
+            } else {
+                banner.classList.add('unlinked');
+                title.innerHTML = '⚠️ Unregistered Card';
+                details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+                registerBtn.style.display = 'inline-block';
+                editBtn.style.display = 'none';
+                registerBtn.onclick = () => window.location.href = `save_user.html?action=register&uid=${scanData.uid}`;
+            }
+        }
+
+        function resetScanner() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+            const registerBtn = document.getElementById('register-btn');
+            const editBtn = document.getElementById('edit-btn');
+
+            clearAssignSupplyBtn()
+
+            banner.className = 'scanner-banner';
+            title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';
+            details.innerHTML = 'Tap an RFID card to verify link status.';
+            registerBtn.style.display = 'none';
+            editBtn.style.display = 'none';
+        }
+
+        function editHistoryItem(itemId) {
         const currentSavedText = document.getElementById('text-' + itemId).innerText;
         const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');
 
@@ -524,143 +688,7 @@
 
         document.getElementById('supplies-input').focus();
     }
-</script>
-
-    <!-- JavaScript to handle the UI logic -->
-<!--    <script>-->
-<!--        const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };-->
-<!--        document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);-->
-
-<!--        function saveSupply() {-->
-<!--            const location = document.getElementById('location-input').value;-->
-<!--            const supplies = document.getElementById('supplies-input').value;-->
-
-<!--            // Enforce filling both fields-->
-<!--            if (location.trim() === "" || supplies.trim() === "") {-->
-<!--                alert("Please fill in both the location and the supplies.");-->
-<!--                return;-->
-<!--            }-->
-
-<!--            const now = new Date();-->
-<!--            const timeOptions = {hour: 'numeric', minute: '2-digit', hour12: true};-->
-<!--            const dateString = now.toLocaleDateString('en-US', headerDateOptions);-->
-<!--            const timeString = now.toLocaleTimeString('en-US', timeOptions);-->
-
-<!--            const placeholder = document.getElementById('placeholder-history');-->
-<!--            if (placeholder) {-->
-<!--                placeholder.remove();-->
-<!--            }-->
-
-<!--            // Generate a unique ID using Date.now()-->
-<!--            const itemId = 'history-item-' + Date.now();-->
-
-<!--            // Updated HTML Block to include the clickable button below the edit button-->
-<!--            const newHistoryHTML = `-->
-<!--                <li class="history-item" id="${itemId}">-->
-<!--                    <div>-->
-<!--                        <p class="history-text" id="text-${itemId}">${supplies}</p>-->
-<!--                        <p class="history-location" id="loc-${itemId}">Location: ${location}</p>-->
-<!--                        <p class="history-time">Saved on: ${dateString} at ${timeString}</p>-->
-<!--                    </div>-->
-<!--                    <div class="history-actions">-->
-<!--                        <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>-->
-<!--                        <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>-->
-<!--                    </div>-->
-<!--                </li>-->
-<!--            `;-->
-
-<!--            const historyList = document.getElementById('history-list');-->
-<!--            historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);-->
-
-<!--            // Clear the boxes automatically-->
-<!--            document.getElementById('location-input').value = "";-->
-<!--            document.getElementById('supplies-input').value = "";-->
-
-<!--            // Return focus to supplies to keep workflow fast-->
-<!--            document.getElementById('supplies-input').focus();-->
-<!--        }-->
-
-<!--        // -&#45;&#45; 1. NEW LIVE POLLING LOGIC -&#45;&#45;-->
-<!--        function pollScanner() {-->
-<!--        fetch('/api/check_scanner/')-->
-<!--            .then(response => response.json())-->
-<!--            .then(data => {-->
-<!--                if (data.status === 'success') {-->
-<!--                    // The database caught a scan! Update the UI automatically.-->
-<!--                    updateScannerBanner(data.scan_data);-->
-<!--                }-->
-<!--            })-->
-<!--            .catch(error => console.error('Error checking scanner:', error));-->
-<!--        }-->
-
-<!--        // Start listening to the backend automatically every 1.5 seconds-->
-<!--        setInterval(pollScanner, 1500);-->
-
-<!--        // -&#45;&#45; 2. UPDATE UI BASED ON DATABASE CHECK -&#45;&#45;-->
-<!--        function updateScannerBanner(scanData) {-->
-<!--            const banner = document.getElementById('scanner-banner');-->
-<!--            const title = document.getElementById('scanner-title');-->
-<!--            const details = document.getElementById('scanner-details');-->
-<!--            const registerBtn = document.getElementById('register-btn');-->
-<!--            const editBtn = document.getElementById('edit-btn');-->
-
-<!--            // Reset styles-->
-<!--            banner.className = 'scanner-banner';-->
-
-<!--            if (scanData.is_linked) {-->
-<!--                // Registered Card Detected-->
-<!--                banner.classList.add('linked');-->
-<!--                title.innerHTML = '✅ Card Recognized';-->
-<!--                details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;-->
-<!--                registerBtn.style.display = 'none';-->
-<!--                editBtn.style.display = 'inline-block';-->
-
-<!--                // Pass the specific UID into the URL so the edit page knows who to load-->
-<!--                editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;-->
-<!--            } else {-->
-<!--                // Unregistered Card Detected-->
-<!--                banner.classList.add('unlinked');-->
-<!--                title.innerHTML = '⚠️ Unregistered Card';-->
-<!--                details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;-->
-<!--                registerBtn.style.display = 'inline-block';-->
-<!--                editBtn.style.display = 'none';-->
-
-<!--                // Pass the specific UID into the URL for registration-->
-<!--                registerBtn.onclick = () => window.location.href = `edit_user.html?action=register&uid=${scanData.uid}`;-->
-<!--            }-->
-<!--        }-->
-
-<!--        function resetScanner() {-->
-<!--            const banner = document.getElementById('scanner-banner');-->
-<!--            const title = document.getElementById('scanner-title');-->
-<!--            const details = document.getElementById('scanner-details');-->
-<!--            const registerBtn = document.getElementById('register-btn');-->
-<!--            const editBtn = document.getElementById('edit-btn');-->
-
-<!--            banner.className = 'scanner-banner';-->
-<!--            title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';-->
-<!--            details.innerHTML = 'Tap an RFID card to verify link status.';-->
-<!--            registerBtn.style.display = 'none';-->
-<!--            editBtn.style.display = 'none';-->
-<!--        }-->
-
-<!--        function editHistoryItem(itemId) {-->
-<!--            const currentSavedText = document.getElementById('text-' + itemId).innerText;-->
-<!--            const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');-->
-
-<!--            document.getElementById('supplies-input').value = currentSavedText;-->
-<!--            document.getElementById('location-input').value = currentSavedLoc;-->
-
-<!--            document.getElementById(itemId).remove();-->
-
-<!--            const historyList = document.getElementById('history-list');-->
-<!--            if (historyList.children.length === 0) {-->
-<!--                historyList.innerHTML = `<li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;"><em>No supplies logged for this session yet.</em></li>`;-->
-<!--            }-->
-
-<!--            document.getElementById('supplies-input').focus();-->
-<!--        }-->
-<!--    </script>-->
+    </script>
 
 </body>
 </html>

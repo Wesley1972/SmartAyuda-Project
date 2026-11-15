@@ -7,8 +7,7 @@ class NoDeleteQuerySet(models.QuerySet):
         raise PermissionDenied("User records are permanent and cannot be deleted")
 
 class User(models.Model):
-    first_name = models.CharField(max_length=50)
-    last_name = models.CharField(max_length=50)
+    full_name = models.CharField(max_length=100)
     address = models.TextField(help_text='Enter your address here')
 
     objects = NoDeleteQuerySet.as_manager()
@@ -17,7 +16,7 @@ class User(models.Model):
         raise PermissionDenied("User records are permanent and cannot be deleted")
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.full_name}'
 
 class RFIDCard(models.Model):
     uid = models.CharField(max_length=50, unique=True)
@@ -34,7 +33,7 @@ class RFIDCard(models.Model):
 class ReliefLog(models.Model):
     card_scanned = models.ForeignKey(RFIDCard, on_delete=models.PROTECT, null=True, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
-    supplies_received = models.IntegerField()
+    supplies_received = models.TextField()
     location = models.CharField(max_length=150)
 
     objects = NoDeleteQuerySet.as_manager()
@@ -45,3 +44,15 @@ class ReliefLog(models.Model):
     def __str__(self):
         return f'{self.card_scanned} {self.timestamp} {self.supplies_received} {self.location}'
 
+class AdminSetReliefLog(models.Model):
+    location = models.CharField(max_length=150)
+    supplies_relief = models.TextField()
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    objects = NoDeleteQuerySet.as_manager()
+
+    def delete(self, *args, **kwargs):
+        raise PermissionDenied("Records are permanent and cannot be deleted")
+
+    def __str__(self):
+        return f'{self.location} {self.supplies_relief}'

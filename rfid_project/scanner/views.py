@@ -1,10 +1,112 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import RFIDCard, ReliefLog
+from .models import RFIDCard, ReliefLog, AdminSetReliefLog
 from django.shortcuts import render
 
 LATEST_SCAN = None
+
+def get_admin_logs(request):
+    logs = AdminSetReliefLog.objects.all().order_by('timestamp')
+
+    data = []
+    for log in logs:
+        data.append({
+            'id': log.id,
+            'location': log.location,
+            'supplies': log.supplies_relief,
+            'timestamp': log.timestamp.isoformat()
+        })
+    return JsonResponse({'logs': data})
+
+@csrf_exempt
+def save_supply(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        location = data.get('location')
+        supplies = data.get('supplies')
+
+        if not location or not supplies:
+            return JsonResponse({'status': 'error', 'message': 'Missing location or supplies'}, status=400)
+
+        log = AdminSetReliefLog.objects.create(
+            location=location,
+            supplies_relief=supplies
+        )
+
+        return JsonResponse({
+            'status': 'success',
+            'id': log.id,
+            'message': 'Supplies and location saved successfully!'
+        })
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+
+def get_user_details(request):
+    # Grab the UID from the end of the web address (e.g., ?uid=1234)
+    uid = request.GET.get('uid') #
+    if uid:
+        try:
+            card = RFIDCard.objects.get(uid=uid)
+            if card.owner:
+                # Send their current name and address back to the webpage
+                return JsonResponse({
+                    'status': 'success',
+                    'full_name': card.owner.full_name,
+                    'address': card.owner.address
+                })
+        except RFIDCard.DoesNotExist:
+            pass
+    return JsonResponse({'status': 'error'}, status=404)
+
+@csrf_exempt
+def update_user(request):
+    if request.method != 'POST':
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid request method'
+        }, status=405)
+
+    try:
+        data = json.loads(request.body)
+
+        uid = data.get('uid')
+        full_name = data.get('full_name')
+        address = data.get('address')
+
+        if not all([uid, full_name, address]):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Missing required fields'
+            }, status=400)
+
+        card = RFIDCard.objects.get(uid=uid)
+
+        if not card.owner:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'This card is not linked to a user'
+            }, status=400)
+
+        card.owner.full_name = full_name
+        card.owner.address = address
+        card.owner.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'User details updated successfully!'
+        })
+
+    except RFIDCard.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Card not found'
+        }, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
 
 @csrf_exempt
 def record_scan(request):
@@ -17,7 +119,7 @@ def record_scan(request):
             card, created = RFIDCard.objects.get_or_create(uid=scanned_uid) # 1. Check if the card exists in the database. If not, create it.
 
             if card.owner: # Check if the card is linked to a user
-                owner_name = f"{card.owner.first_name} {card.owner.last_name}"
+                owner_name = card.owner.full_name
                 LATEST_SCAN = {'uid': card.uid, 'is_linked': True, 'name': owner_name}
             else:
                 LATEST_SCAN = {'uid': card.uid, 'is_linked': False, 'name': None}
@@ -39,7 +141,7 @@ def get_logs(request):
     data = [] # Format the data into a simple dictionary list
     for log in logs:
         # Check if the card has an owner; if not, mark as Unregistered
-        owner_name = f"{log.card_scanned.owner.first_name} {log.card_scanned.owner.last_name}" \
+        owner_name = log.card_scanned.owner.full_name \
             if log.card_scanned.owner \
             else "Unregistered"
 
@@ -57,12 +159,11 @@ def link_card(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         uid = data.get('uid')
-        first_name = data.get('first_name')
-        last_name = data.get('last_name')
+        full_name = data.get('full_name')
         address = data.get('address')
 
         # Make sure all fields were filled out
-        if not all([uid, first_name, last_name, address]):
+        if not all([uid, full_name, address]):
             return JsonResponse({'status': 'error', 'message': 'Missing data fields'}, status=400)
 
         try:
@@ -75,8 +176,7 @@ def link_card(request):
             # Create the new user and attach them to the card
             from .models import User  # Ensure User model is imported
             new_user = User.objects.create(
-                first_name=first_name,
-                last_name=last_name,
+                full_name=full_name,
                 address=address
             )
             card.owner = new_user
@@ -102,3 +202,12 @@ def dashboard(request):
 # Render edit_user.html on the Django server
 def edit_user_view(request):
     return render(request, 'edit_user.html')
+
+def user_portal_view(request):
+    return render(request, 'user_portal.html')
+
+def save_user_view(request):
+    return render(request, 'save_user.html')
+
+
+

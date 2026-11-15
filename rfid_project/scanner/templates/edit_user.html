@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="browser-title">SmartAyuda - Edit User Details</title>
+    <title>SmartAyuda - Edit User Details</title>
 
     <style>
         /* Base Styles matching SmartAyuda theme */
@@ -27,9 +27,8 @@
         .header {
             text-align: center;
             margin-bottom: 25px;
-            border-bottom: 2px solid #28a745;
+            border-bottom: 2px solid #ffc107;
             padding-bottom: 15px;
-            transition: border-color 0.3s;
         }
 
         .header h1 {
@@ -67,7 +66,7 @@
         }
 
         .form-group input:focus {
-            border-color: #28a745;
+            border-color: #ffc107;
         }
 
         .readonly-info {
@@ -120,195 +119,105 @@
             background-color: #c82333;
         }
     </style>
-
 </head>
 <body>
 
     <div class="dashboard-container">
-        <div class="header" id="page-header-container">
-            <h1 id="page-title">Edit User Information</h1>
-            <p id="page-subtitle">Update user record name and address details</p>
+        <div class="header">
+            <h1>Edit User Information</h1>
+            <p>Update user record name and address details</p>
         </div>
 
-        <form id="dynamic-user-form" onsubmit="submitDynamicForm(event)">
-            <!-- Card UID (Read-only reference) -->
+        <form id="edit-user-form" onsubmit="submitEditForm(event)">
             <div class="form-group">
                 <label>Card UID:</label>
                 <div class="readonly-info" id="display-uid">A1B2C3D4</div>
             </div>
 
-            <!-- Name Input Field -->
             <div class="form-group">
                 <label for="user-name">Full Name:</label>
-                <input type="text" id="user-name" placeholder="Enter full name..." required>
+                <input type="text" id="user-name" required>
             </div>
 
-            <!-- Address Input Field -->
             <div class="form-group">
                 <label for="user-address">Address:</label>
-                <input type="text" id="user-address" placeholder="Enter complete address..." required>
+                <input type="text" id="user-address" required>
             </div>
 
-            <!-- Buttons -->
             <div class="button-group">
                 <button type="button" class="btn-cancel" onclick="window.location.href='admin_portal.html'">Cancel</button>
-                <button type="submit" class="btn-save" id="submit-btn">Save Changes</button>
+                <button type="submit" class="btn-save">Save Changes</button>
             </div>
         </form>
     </div>
 
     <script>
-        // Run this function automatically when the page loads
         document.addEventListener("DOMContentLoaded", function() {
-            // Check the URL for the '?action=' parameter
             const urlParams = new URLSearchParams(window.location.search);
-            const action = urlParams.get('action');
-
-            const scannedUid = urlParams.get('uid'); // Grab the UID passed from admin_portal.html
+            const scannedUid = urlParams.get('uid');
 
             if (scannedUid) {
                 document.getElementById('display-uid').innerText = scannedUid;
-            }
 
-            const browserTitle = document.getElementById('browser-title');
-            const pageTitle = document.getElementById('page-title');
-            const pageSubtitle = document.getElementById('page-subtitle');
-            const submitBtn = document.getElementById('submit-btn');
-            const nameInput = document.getElementById('user-name');
-            const addressInput = document.getElementById('user-address');
-            const form = document.getElementById('dynamic-user-form');
-            const headerContainer = document.getElementById('page-header-container');
-
-            // If the URL says ?action=register, change everything to Create User mode
-            if (action === 'register') {
-                browserTitle.innerText = "SmartAyuda - Register New User";
-                pageTitle.innerText = "Register New User";
-                pageSubtitle.innerText = "Link an unassigned card to a new recipient record";
-                submitBtn.innerText = "Register & Link";
-                nameInput.value = ""; // Leave blank for new entry
-                addressInput.value = ""; // Leave blank for new entry
-                form.dataset.mode = 'register';
-                headerContainer.style.borderBottomColor = "#28a745"; // Green accent
-            }
-            // Otherwise, default to Edit User mode
-            else {
-                browserTitle.innerText = "SmartAyuda - Edit User Details";
-                pageTitle.innerText = "Edit User Information";
-                pageSubtitle.innerText = "Update user record name and address details";
-                submitBtn.innerText = "Save Changes";
-                nameInput.value = "Juan Dela Cruz"; // Pre-filled dummy data
-                addressInput.value = "Block 4, Purok 2, Carrascal"; // Pre-filled dummy data
-                form.dataset.mode = 'edit';
-                headerContainer.style.borderBottomColor = "#ffc107"; // Yellow accent
+                // 1. ASKING DJANGO FOR THE DATA
+                // When the page opens, fetch the user's current database profile
+                fetch('/api/get_user/?uid=' + scannedUid)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Inject the live database data into the empty input boxes
+                            document.getElementById('user-name').value = data.full_name;
+                            document.getElementById('user-address').value = data.address;
+                        }
+                    });
             }
         });
 
-        function submitDynamicForm(event) {
+        function submitEditForm(event) {
             event.preventDefault();
 
-            const mode = document.getElementById('dynamic-user-form').dataset.mode;
             const updatedName = document.getElementById('user-name').value;
             const updatedAddress = document.getElementById('user-address').value;
             const uid = document.getElementById('display-uid').innerText;
 
-            // Trigger the correct success message based on which mode we are in
-            if (mode === 'register') {
-                alert("New user successfully registered and linked!\nName: " + updatedName + "\nAddress: " + updatedAddress + "\nUID: " + uid);
-            } else {
-                alert("User details successfully updated!\nName: " + updatedName + "\nAddress: " + updatedAddress);
+            if (!uid || !updatedName || !updatedAddress) {
+                alert("Please fill in all required fields.");
+                return;
             }
 
-            // Redirect back to main dashboard
-            window.location.href = 'admin_portal.html';
-        }
-
-        // --- LIVE POLLING LOGIC FOR REGISTRATION PAGE ---
-        function pollScanner() {
-            fetch('/api/check_scanner/')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        // The database caught a scan! Autofill the UID input box.
-                        const uidDisplay = document.getElementById('display-uid');
-                        if (uidDisplay) {
-                            uidDisplay.innerText = data.scan_data.uid;
-
-                            // Optional: Flash the box green to let the user know it worked
-                            uidDisplay.style.borderColor = '#28a745';
-                            uidDisplay.style.backgroundColor = '#e8f5e9';
-                            setTimeout(() => {
-                                uidDisplay.style.backgroundColor = '#f8f9fa';
-                                uidDisplay.style.borderColor = '#ddd';
-                            }, 1000);
-                        }
-                    }
+            fetch('/api/update_user/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    uid: uid,
+                    full_name: updatedName,
+                    address: updatedAddress
                 })
-                .catch(error => console.error('Error checking scanner:', error));
+            })
+            .then(response => response.json())
+            .then(data => {
+
+                if (data.status === 'success') {
+
+                    alert("User details successfully updated!");
+
+                    window.location.href = 'admin_portal.html';
+
+                } else {
+
+                    alert("Update failed: " + data.message);
+
+                }
+
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Something went wrong while saving. Check the browser console.");
+            });
         }
-
-        // Start listening to the backend automatically every 1.5 seconds
-        setInterval(pollScanner, 1500);
     </script>
-
-<!--    <script>-->
-<!--        // Run this function automatically when the page loads-->
-<!--        document.addEventListener("DOMContentLoaded", function() {-->
-<!--            // Check the URL for the '?action=' parameter-->
-<!--            const urlParams = new URLSearchParams(window.location.search);-->
-<!--            const action = urlParams.get('action');-->
-
-<!--            const browserTitle = document.getElementById('browser-title');-->
-<!--            const pageTitle = document.getElementById('page-title');-->
-<!--            const pageSubtitle = document.getElementById('page-subtitle');-->
-<!--            const submitBtn = document.getElementById('submit-btn');-->
-<!--            const nameInput = document.getElementById('user-name');-->
-<!--            const addressInput = document.getElementById('user-address');-->
-<!--            const form = document.getElementById('dynamic-user-form');-->
-<!--            const headerContainer = document.getElementById('page-header-container');-->
-
-<!--            // If the URL says ?action=register, change everything to Create User mode-->
-<!--            if (action === 'register') {-->
-<!--                browserTitle.innerText = "SmartAyuda - Register New User";-->
-<!--                pageTitle.innerText = "Register New User";-->
-<!--                pageSubtitle.innerText = "Link an unassigned card to a new recipient record";-->
-<!--                submitBtn.innerText = "Register & Link";-->
-<!--                nameInput.value = ""; // Leave blank for new entry-->
-<!--                addressInput.value = ""; // Leave blank for new entry-->
-<!--                form.dataset.mode = 'register';-->
-<!--                headerContainer.style.borderBottomColor = "#28a745"; // Green accent-->
-<!--            }-->
-<!--            // Otherwise, default to Edit User mode-->
-<!--            else {-->
-<!--                browserTitle.innerText = "SmartAyuda - Edit User Details";-->
-<!--                pageTitle.innerText = "Edit User Information";-->
-<!--                pageSubtitle.innerText = "Update user record name and address details";-->
-<!--                submitBtn.innerText = "Save Changes";-->
-<!--                nameInput.value = "Juan Dela Cruz"; // Pre-filled dummy data-->
-<!--                addressInput.value = "Block 4, Purok 2, Carrascal"; // Pre-filled dummy data-->
-<!--                form.dataset.mode = 'edit';-->
-<!--                headerContainer.style.borderBottomColor = "#ffc107"; // Yellow accent-->
-<!--            }-->
-<!--        });-->
-
-<!--        function submitDynamicForm(event) {-->
-<!--            event.preventDefault();-->
-
-<!--            const mode = document.getElementById('dynamic-user-form').dataset.mode;-->
-<!--            const updatedName = document.getElementById('user-name').value;-->
-<!--            const updatedAddress = document.getElementById('user-address').value;-->
-<!--            const uid = document.getElementById('display-uid').innerText;-->
-
-<!--            // Trigger the correct success message based on which mode we are in-->
-<!--            if (mode === 'register') {-->
-<!--                alert("New user successfully registered and linked!\nName: " + updatedName + "\nAddress: " + updatedAddress + "\nUID: " + uid);-->
-<!--            } else {-->
-<!--                alert("User details successfully updated!\nName: " + updatedName + "\nAddress: " + updatedAddress);-->
-<!--            }-->
-
-<!--            // Redirect back to main dashboard-->
-<!--            window.location.href = 'admin_portal.html';-->
-<!--        }-->
-<!--    </script>-->
 
 </body>
 </html>

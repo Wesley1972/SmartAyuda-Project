@@ -11,6 +11,12 @@ urlpatterns = [
     path('api/check_scanner/', views.check_scanner_status, name='check_scanner'),
     path('admin_portal.html', views.dashboard, name='admin_portal'),
     path('edit_user.html', views.edit_user_view, name='edit_user'),
+    path('user-portal/', views.user_portal_view, name='user_portal'),
+    path('save_user.html', views.save_user_view, name='save_user'),
+    path('api/get_user/', views.get_user_details, name='get_user'),
+    path('api/update_user/', views.update_user, name='update_user'),
+    path('api/save_supply/', views.save_supply, name='save_supply'),
+    path('api/get_admin_logs/', views.get_admin_logs, name='get_admin_logs'),
 ]
 
 
