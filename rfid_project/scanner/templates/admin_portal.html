@@ -329,6 +329,9 @@
 
     <div class="dashboard-container">
         <div class="header">
+            <p id="admin-name-display" style="color: #555; font-size: 1.2em; font-weight: bold; margin: 0 0 8px 0;">
+                Admin: Administrator
+            </p>
             <h1>Relief Distribution Desk</h1>
         </div>
 
@@ -382,6 +385,8 @@
         const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
 
+        const loggedInAdmin = localStorage.getItem('adminName') || 'Administrator';
+        document.getElementById('admin-name-display').innerText = 'Admin: ' + loggedInAdmin;
         // Helper function to turn the Assign Supply button back to normal gray
         function clearAssignSupplyBtn() {
             const assignBtn = document.getElementById('assign-supply-btn');
@@ -431,7 +436,7 @@
 
             banner.className = 'scanner-banner linked';
             title.innerHTML = '✅ Card Recognized';
-            details.innerHTML = `<strong>Name:</strong> ${mockScanData.name} <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
+            details.innerHTML = `<strong>Full name:</strong> ${mockScanData.name} <br> <small style="color: #666;">UID: ${mockScanData.uid}</small>`;
 
             registerBtn.style.display = 'none';
             editBtn.style.display = 'inline-block';
@@ -462,7 +467,7 @@
         }
 
         // --- Helper Function to Render a Record on Screen ---
-        function renderHistoryItem(id, location, supplies, dateObj) {
+        function renderHistoryItem(id, location, supplies, dateObj, recipientCount = 0) {
             const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
             const dateString = dateObj.toLocaleDateString('en-US', headerDateOptions);
             const timeString = dateObj.toLocaleTimeString('en-US', timeOptions);
@@ -483,7 +488,7 @@
                     </div>
                     <div class="history-actions">
                         <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
-                        <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+                        <button class="recipient-count-btn" id="count-${itemId}" onclick="window.open('recipients.html?log_id=${id}', '_blank')">Number of people received aid: ${recipientCount}</button>
                     </div>
                 </li>
             `;
@@ -499,11 +504,13 @@
                 .then(data => {
                     data.logs.forEach(log => {
                         const savedDate = new Date(log.timestamp);
-                        renderHistoryItem(log.id, log.location, log.supplies, savedDate);
+                        renderHistoryItem(log.id, log.location, log.supplies, savedDate, log.recipient_count);
                     });
                 })
                 .catch(error => console.error('Error loading saved supplies:', error));
         }
+
+        let editingLogId = null;
 
         function saveSupply(event) {
             event.preventDefault(); // Prevents the form from refreshing the page
@@ -521,6 +528,7 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    id: editingLogId,
                     location: location,
                     supplies: supplies
                 })
@@ -528,6 +536,8 @@
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
+                    editingLogId = null;
+
                     const now = new Date();
                     const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
                     const dateString = now.toLocaleDateString('en-US', headerDateOptions);
@@ -549,7 +559,7 @@
                             </div>
                             <div class="history-actions">
                                 <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
-                                <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
+                                <button class="recipient-count-btn" id="count-${itemId}" onclick="window.open('recipients.html?log_id=${data.id}', '_blank')">Number of people received aid: ${data.recipient_count}</button>
                             </div>
                         </li>
                     `;
@@ -572,49 +582,6 @@
 
         loadSavedSupplies();
 
-        // function saveSupply() {
-        //     const location = document.getElementById('location-input').value;
-        //     const supplies = document.getElementById('supplies-input').value;
-        //
-        //     if(location.trim() === "" || supplies.trim() === "") {
-        //         alert("Please fill in both the location and the supplies.");
-        //         return;
-        //     }
-        //
-        //     const now = new Date();
-        //     const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
-        //     const dateString = now.toLocaleDateString('en-US', headerDateOptions);
-        //     const timeString = now.toLocaleTimeString('en-US', timeOptions);
-        //
-        //     const placeholder = document.getElementById('placeholder-history');
-        //     if (placeholder) {
-        //         placeholder.remove();
-        //     }
-        //
-        //     const itemId = 'history-item-' + Date.now();
-        //
-        //     const newHistoryHTML = `
-        //         <li class="history-item" id="${itemId}">
-        //             <div>
-        //                 <p class="history-text" id="text-${itemId}">${supplies}</p>
-        //                 <p class="history-location" id="loc-${itemId}">Location: ${location}</p>
-        //                 <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
-        //             </div>
-        //             <div class="history-actions">
-        //                 <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
-        //                 <button class="recipient-count-btn" onclick="window.open('recipients.html', '_blank')">Number of people received aid: </button>
-        //             </div>
-        //         </li>
-        //     `;
-        //
-        //     const historyList = document.getElementById('history-list');
-        //     historyList.insertAdjacentHTML('afterbegin', newHistoryHTML);
-        //
-        //     document.getElementById('location-input').value = "";
-        //     document.getElementById('supplies-input').value = "";
-        //     document.getElementById('supplies-input').focus();
-        // }
-
         // --- 1. LIVE POLLING LOGIC ---
         function pollScanner() {
             fetch('/api/check_scanner/')
@@ -630,24 +597,49 @@
         // Start listening to the backend automatically every 1.5 seconds
         setInterval(pollScanner, 1500);
 
-        // --- 2. UPDATE UI BASED ON DATABASE CHECK ---
         function updateScannerBanner(scanData) {
             const banner = document.getElementById('scanner-banner');
             const title = document.getElementById('scanner-title');
             const details = document.getElementById('scanner-details');
             const registerBtn = document.getElementById('register-btn');
             const editBtn = document.getElementById('edit-btn');
+            const assignBtn = document.getElementById('assign-supply-btn');
+
+            const isAssignMode = assignBtn && assignBtn.classList.contains('active-assign');
 
             banner.className = 'scanner-banner';
 
             if (scanData.is_linked) {
                 banner.classList.add('linked');
-                title.innerHTML = '✅ Card Recognized';
-                details.innerHTML = `<strong>Name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
                 registerBtn.style.display = 'none';
-                editBtn.style.display = 'inline-block';
-                editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;
+                editBtn.style.display = 'none';
+
+                if (isAssignMode) {
+                    const historyList = document.getElementById('history-list');
+                    const topRecord = historyList.querySelector('.history-item:not(#placeholder-history)');
+
+                    if (topRecord) {
+                        const suppliesText = topRecord.querySelector('.history-text').innerText.trim();
+
+                        title.innerHTML = '✅ Supply Assigned!';
+                        details.innerHTML = `<strong>Full name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+
+                        // Send UID to Django to attach the user to the latest AdminSetReliefLog
+                        assignSupplyToUser(scanData.uid, suppliesText);
+                        // Notice clearAssignSupplyBtn() is NOT called here, so the button stays green!
+                    } else {
+                        alert("No supplies in the Recent Saved Records to assign! Please save a supply first.");
+                    }
+                } else {
+                    title.innerHTML = '✅ Card Recognized';
+                    details.innerHTML = `<strong>Full name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
+                    editBtn.style.display = 'inline-block';
+                    editBtn.onclick = () => window.location.href = `edit_user.html?action=edit&uid=${scanData.uid}`;
+                }
             } else {
+                if (isAssignMode) {
+                    clearAssignSupplyBtn();
+                }
                 banner.classList.add('unlinked');
                 title.innerHTML = '⚠️ Unregistered Card';
                 details.innerHTML = `This card is not linked to any user. Please register. <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
@@ -655,6 +647,42 @@
                 editBtn.style.display = 'none';
                 registerBtn.onclick = () => window.location.href = `save_user.html?action=register&uid=${scanData.uid}`;
             }
+        }
+
+        function assignSupplyToUser(uid, supplies, location, adminLogId) {
+            fetch('/api/assign_supply/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uid: uid,
+                    supplies: supplies,
+                    location: location,
+                    admin_log_id: adminLogId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const title = document.getElementById('scanner-title');
+                const details = document.getElementById('scanner-details');
+
+                if (data.status === 'success') {
+                    title.innerHTML = '✅ Supply Assigned!';
+                    details.innerHTML += `<br><span style="color: #28a745; font-weight: bold; display: inline-block; margin-top: 10px;">Assigned: ${supplies} (${location})</span>`;
+
+                    const countBtn = document.getElementById(`count-history-item-${data.log_id}`);
+                    if (countBtn) {
+                        countBtn.innerText = `Number of people received aid: ${data.recipient_count}`;
+                    }
+                } else {
+                    title.innerHTML = '❌ Assignment Failed';
+                    alert("Database Error: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error assigning supply:', error);
+                document.getElementById('scanner-title').innerHTML = '❌ Network Error';
+                alert("Network Error: Could not link supply to user.");
+            });
         }
 
         function resetScanner() {
@@ -674,6 +702,7 @@
         }
 
         function editHistoryItem(itemId) {
+        editingLogId = itemId.replace('history-item-', '');
         const currentSavedText = document.getElementById('text-' + itemId).innerText;
         const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');
 

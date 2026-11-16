@@ -54,7 +54,7 @@
             margin-bottom: 8px;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px 15px;
             font-size: 1.1em;
@@ -65,7 +65,7 @@
             transition: border-color 0.3s;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             border-color: #ffc107;
         }
 
@@ -144,6 +144,14 @@
                 <input type="text" id="user-address" required>
             </div>
 
+            <div class="form-group">
+                <label for="user-role">Role:</label>
+                <select id="user-role">
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
             <div class="button-group">
                 <button type="button" class="btn-cancel" onclick="window.location.href='admin_portal.html'">Cancel</button>
                 <button type="submit" class="btn-save">Save Changes</button>
@@ -168,6 +176,7 @@
                             // Inject the live database data into the empty input boxes
                             document.getElementById('user-name').value = data.full_name;
                             document.getElementById('user-address').value = data.address;
+                            document.getElementById('user-role').value = data.role;
                         }
                     });
             }
@@ -178,6 +187,7 @@
 
             const updatedName = document.getElementById('user-name').value;
             const updatedAddress = document.getElementById('user-address').value;
+            const updatedRole = document.getElementById('user-role').value;
             const uid = document.getElementById('display-uid').innerText;
 
             if (!uid || !updatedName || !updatedAddress) {
@@ -193,7 +203,8 @@
                 body: JSON.stringify({
                     uid: uid,
                     full_name: updatedName,
-                    address: updatedAddress
+                    address: updatedAddress,
+                    role: updatedRole,
                 })
             })
             .then(response => response.json())
@@ -221,6 +232,4 @@
 
 </body>
 </html>
-
-
 

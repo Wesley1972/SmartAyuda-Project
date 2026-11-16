@@ -137,9 +137,9 @@
 
         <!-- User Information Section -->
         <div class="user-profile">
-            <h2>Juan Dela Cruz</h2>
-            <p><strong>Address:</strong> Block 4, Purok 2, Carrascal</p>
-            <p><strong>Card UID:</strong> A1B2C3D4</p>
+            <h2 id="user-name">Loading...</h2>
+            <p><strong>Address:</strong> <span id="user-address">Loading...</span></p>
+            <p><strong>Card UID:</strong> <span id="user-uid">Loading...</span></p>
         </div>
 
         <!-- Relief Supplies Received History -->
@@ -153,26 +153,44 @@
                 </tr>
             </thead>
             <tbody>
-                <!-- Dummy Data rows for frontend visualization -->
-                <tr>
-                    <td>November 14, 2026</td>
-                    <td>1:25 AM</td>
-                    <td class="supply-text">5kg Rice, 2 Canned Goods, 1 Water</td>
-                </tr>
-                <tr>
-                    <td>November 12, 2026</td>
-                    <td>8:23 PM</td>
-                    <td class="supply-text">5kg Rice, 2 Water</td>
-                </tr>
-                <tr>
-                    <td>November 09, 2026</td>
-                    <td>10:15 AM</td>
-                    <td class="supply-text">1 Hygiene Kit, 2 Blankets</td>
-                </tr>
+                <tbody id="history-tbody"></tbody>
             </tbody>
+            <script>
+                const loggedInUser = localStorage.getItem('userName');
+
+                if (loggedInUser) {
+                    fetch('/api/get_user_records/?name=' + encodeURIComponent(loggedInUser))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                document.getElementById('user-name').innerText = data.full_name;
+                                document.getElementById('user-address').innerText = data.address;
+                                document.getElementById('user-uid').innerText = data.uid;
+
+                                const tbody = document.getElementById('history-tbody');
+                                tbody.innerHTML = '';
+
+                                data.history.forEach(item => {
+                                    const dt = new Date(item.time_received);
+                                    const dateStr = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                                    const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+                                    tbody.innerHTML += `
+                                        <tr>
+                                            <td>${dateStr}</td>
+                                            <td>${timeStr}</td>
+                                            <td class="supply-text">${item.supplies}</td>
+                                        </tr>
+                                    `;
+                                });
+                            }
+                        });
+                }
+            </script>
         </table>
     </div>
 
 </body>
 </html>
+<!--this is the index.html file-->
 

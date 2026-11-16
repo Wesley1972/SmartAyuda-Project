@@ -206,7 +206,7 @@
         <!-- --- Dev Testing Buttons --- -->
         <div class="dev-buttons">
             <p>Developer Simulation Controls</p>
-            <button onclick="simulateLogin('admin')">Scan Admin Card</button>
+            <button onclick="simulateLogin('admin')">Simulate Scan Admin Card</button>
             <button onclick="simulateLogin('user')">Scan User Card</button>
             <button onclick="simulateLogin('unregistered')">Scan Unknown Card</button>
         </div>
@@ -214,7 +214,7 @@
 
     <!-- JavaScript to handle the UI login logic -->
     <script>
-        function simulateLogin(role) {
+        function simulateLogin(role, name = 'Administrator') {
             const banner = document.getElementById('scanner-banner');
             const title = document.getElementById('scanner-title');
             const details = document.getElementById('scanner-details');
@@ -223,6 +223,7 @@
             banner.className = 'scanner-banner';
 
             if (role === 'admin') {
+                localStorage.setItem('adminName', name);
                 banner.classList.add('linked');
                 title.innerHTML = '✅ Admin Recognized';
                 details.innerHTML = 'Welcome, Administrator. Logging you in...';
@@ -235,7 +236,8 @@
             } else if (role === 'user') {
                 banner.classList.add('linked');
                 title.innerHTML = '✅ User Recognized';
-                details.innerHTML = 'Welcome, Juan Dela Cruz. Accessing your records...';
+                localStorage.setItem('userName', name);
+                details.innerHTML = 'Welcome, ' + name + '. Accessing your records...';
 
                 // Automatically redirect to the user's view (adjust filename as needed)
                 setTimeout(() => {
@@ -260,17 +262,19 @@
                 return;
             }
 
-            const banner = document.getElementById('scanner-banner');
-            const title = document.getElementById('scanner-title');
-            const details = document.getElementById('scanner-details');
-
-            banner.className = 'scanner-banner linked';
-            title.innerHTML = '✅ Name Recognized';
-            details.innerHTML = 'Welcome, ' + nameInput + '. Accessing your records...';
-
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1500);
+            fetch('/api/manual_login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ full_name: nameInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    simulateLogin(data.role, data.name);
+                } else {
+                    simulateLogin('unregistered');
+                }
+            });
         }
 
         function resetScanner() {
@@ -282,7 +286,25 @@
             title.innerHTML = '<span class="status-dot" id="status-dot"></span> Waiting for Card Scan...';
             details.innerHTML = 'Tap your RFID card to log in automatically.';
         }
+
+        function pollScanner() {
+            fetch('/api/check_scanner/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        if (data.scan_data.is_linked) {
+                            simulateLogin(data.scan_data.role, data.scan_data.name);
+                        } else {
+                            simulateLogin('unregistered');
+                        }
+                    }
+                });
+        }
+
+        setInterval(pollScanner, 1500);
     </script>
 
 </body>
 </html>
+<!--This is the user_portal.html-->
+

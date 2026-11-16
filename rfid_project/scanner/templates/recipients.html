@@ -117,7 +117,7 @@
 
     <div class="dashboard-container">
         <!-- Close Button (Useful if opened in a new tab) -->
-        <button class="close-btn" onclick="window.close()">← Close Report</button>
+        <button class="close-btn" onclick="window.location.href='admin_portal.html'">← Close Report</button>
 
         <div class="header">
             <h1>Distribution Report</h1>
@@ -125,10 +125,10 @@
 
         <!-- Session Summary Details -->
         <div class="summary-card">
-            <p><strong>Date:</strong> <span id="report-date">Thursday, November 12, 2026</span></p>
-            <p><strong>Location:</strong> <span id="report-location">San Jose Covered Court</span></p>
-            <p><strong>Supplies Distributed:</strong> <span id="report-supplies">5kg Rice, 2 Water</span></p>
-            <p><strong>Total Recipients:</strong> <span style="font-weight: bold; color: #28a745;">3</span></p>
+            <p><strong>Date:</strong> <span id="report-date">Loading...</span></p>
+            <p><strong>Location:</strong> <span id="report-location">Loading...</span></p>
+            <p><strong>Supplies Distributed:</strong> <span id="report-supplies">Loading...</span></p>
+            <p><strong>Total Recipients:</strong> <span id="report-total" style="font-weight: bold; color: #28a745;">0</span></p>
         </div>
 
         <!-- Recipient List Table -->
@@ -139,41 +139,79 @@
                     <th style="width: 5%;">#</th>
                     <th style="width: 25%;">Name</th>
                     <th style="width: 30%;">Address</th>
-                    <th style="width: 25%;">Supplies Given</th>
                     <th style="width: 15%;">Time Received</th>
                 </tr>
             </thead>
             <tbody id="recipient-list">
-                <!-- Static Dummy Data for Frontend Design -->
-                <tr>
-                    <td>1</td>
-                    <td><strong>Juan Dela Cruz</strong></td>
-                    <td class="address-text">Block 4, Purok 2, Carrascal</td>
-                    <td class="supplies-text">5kg Rice, 2 Water</td>
-                    <td>8:23 PM</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td><strong>Maria Clara</strong></td>
-                    <td class="address-text">Purok 1, Barangay San Jose</td>
-                    <td class="supplies-text">5kg Rice, 2 Water</td>
-                    <td>8:25 PM</td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td><strong>Pedro Penduko</strong></td>
-                    <td class="address-text">Purok 3, Barangay San Jose</td>
-                    <td class="supplies-text">5kg Rice, 2 Water</td>
-                    <td>8:29 PM</td>
-                </tr>
             </tbody>
         </table>
     </div>
 
     <script>
-        // Automatically populate the summary date with today's date
         const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        document.getElementById('report-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
+        const timeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
+
+        // 1. Grab the log_id from the URL (e.g., recipients.html?log_id=5)
+        const urlParams = new URLSearchParams(window.location.search);
+        const logId = urlParams.get('log_id');
+
+        if (logId) {
+            fetch(`/api/get_recipients/?log_id=${logId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const logDate = new Date(data.timestamp);
+                        const dateString = logDate.toLocaleDateString('en-US', headerDateOptions);
+                        const timeString = logDate.toLocaleTimeString('en-US', timeOptions);
+
+                        // 2. Fill in the Summary Card at the top
+                        document.getElementById('report-date').innerText = dateString;
+                        document.getElementById('report-location').innerText = data.location;
+                        document.getElementById('report-supplies').innerText = data.supplies;
+                        document.getElementById('report-total').innerText = data.total_recipients;
+
+                        // 3. Populate the Recipient List Table
+                        const tbody = document.getElementById('recipient-list');
+                        tbody.innerHTML = '';
+
+                        if (data.recipients.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #888;">
+                                        <em>No recipients have received this supply yet.</em>
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            data.recipients.forEach((person, index) => {
+                                const personDate = new Date(person.time_received);
+                                const personTimeString = personDate.toLocaleTimeString('en-US', timeOptions);
+
+                                const rowHTML = `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td><strong>${person.full_name}</strong></td>
+                                        <td class="address-text">${person.address}</td>
+                                        <td>${personTimeString}</td>
+                                    </tr>
+                                `;
+                                tbody.insertAdjacentHTML('beforeend', rowHTML);
+                            });
+                        }
+                    } else {
+                        alert("Error: " + data.message);
+                    }
+                })
+                .catch(error => console.error('Error fetching recipients:', error));
+        } else {
+            document.getElementById('recipient-list').innerHTML = `
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #dc3545;">
+                        <em>No supply record selected. Please open this page from the Admin Portal.</em>
+                    </td>
+                </tr>
+            `;
+        }
     </script>
 
 </body>
