@@ -330,7 +330,7 @@
     <div class="dashboard-container">
         <div class="header">
             <p id="admin-name-display" style="color: #555; font-size: 1.2em; font-weight: bold; margin: 0 0 8px 0;">
-                Admin: Administrator
+                Admin:
             </p>
             <h1>Relief Distribution Desk</h1>
         </div>
@@ -385,8 +385,11 @@
         const headerDateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('display-date').innerText = new Date().toLocaleDateString('en-US', headerDateOptions);
 
-        const loggedInAdmin = localStorage.getItem('adminName') || 'Administrator';
-        document.getElementById('admin-name-display').innerText = 'Admin: ' + loggedInAdmin;
+        const loggedInAdmin = localStorage.getItem('adminName');
+        if (loggedInAdmin) {
+            document.getElementById('admin-name-display').innerText = 'Admin: ' + loggedInAdmin;
+        }
+
         // Helper function to turn the Assign Supply button back to normal gray
         function clearAssignSupplyBtn() {
             const assignBtn = document.getElementById('assign-supply-btn');
@@ -580,7 +583,9 @@
             });
         }
 
-        loadSavedSupplies();
+        if (loggedInAdmin) {
+            loadSavedSupplies();
+        }
 
         // --- 1. LIVE POLLING LOGIC ---
         function pollScanner() {

@@ -214,7 +214,7 @@
 
     <!-- JavaScript to handle the UI login logic -->
     <script>
-        function simulateLogin(role, name = 'Administrator') {
+        function simulateLogin(role, name = '') {
             const banner = document.getElementById('scanner-banner');
             const title = document.getElementById('scanner-title');
             const details = document.getElementById('scanner-details');
@@ -252,6 +252,19 @@
                 // Reset back to scanning mode after 3 seconds
                 setTimeout(resetScanner, 3000);
             }
+        }
+
+        // 3. Action for when an Unknown/Unregistered Card is tapped
+        function simulateUnknownScan() {
+            const banner = document.getElementById('scanner-banner');
+            const title = document.getElementById('scanner-title');
+            const details = document.getElementById('scanner-details');
+
+            banner.className = 'scanner-banner unlinked';
+            title.innerHTML = '⚠️ Access Denied';
+            details.innerHTML = 'Unregistered card. Please see an administrator to register this card.';
+
+            setTimeout(resetScanner, 3000);
         }
 
         function manualLogin() {
