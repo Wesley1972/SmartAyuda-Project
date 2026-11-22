@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-jv(_id7ad@+5zs7btn2aat!tijbcox0yxxfyi1&*+l7o7o01=4
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['wesley1crabajales.pythonanywhere.com', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -118,6 +118,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 import os
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'scanner', 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
