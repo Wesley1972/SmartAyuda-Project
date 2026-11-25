@@ -23,5 +23,6 @@ urlpatterns = [
     path('index.html', views.index_view, name='index'),
     path('api/manual_login/', views.manual_login, name='manual_login'),
     path('api/get_user_records/', views.get_user_records, name='get_user_records'),
+    path('api/ping/', views.api_ping, name='api_ping'),
 ]
 

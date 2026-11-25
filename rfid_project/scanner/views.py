@@ -4,6 +4,7 @@ from django.shortcuts import render
 import json
 from django.utils import timezone
 from .models import User, RFIDCard, AdminSetReliefLog, AidClaim
+from django.http import HttpResponse
 
 LATEST_SCAN = None
 
@@ -164,6 +165,9 @@ def record_scan(request):
                 LATEST_SCAN = {'uid': card.uid, 'is_linked': False, 'name': None}
             return JsonResponse({'status': 'success', 'message': f'Scan received: {scanned_uid}'})
     return JsonResponse({'status': 'error'}, status=400)
+
+def api_ping(request):
+    return HttpResponse("ok", content_type="text/plain")
 
 def check_scanner_status(request):
     global LATEST_SCAN
