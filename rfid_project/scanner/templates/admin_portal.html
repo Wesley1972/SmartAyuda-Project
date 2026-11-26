@@ -490,7 +490,7 @@
                         <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
                     </div>
                     <div class="history-actions">
-<!--                        <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>-->
+                        <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
                         <button class="recipient-count-btn" id="count-${itemId}" onclick="window.open('recipients.html?log_id=${id}', '_blank')">Number of people received aid: ${recipientCount}</button>
                     </div>
                 </li>
@@ -561,7 +561,7 @@
                                 <p class="history-time">Saved on: ${dateString} at ${timeString}</p>
                             </div>
                             <div class="history-actions">
-                                <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>
+<!--                                <button class="history-edit-btn" onclick="editHistoryItem('${itemId}')">Edit</button>-->
                                 <button class="recipient-count-btn" id="count-${itemId}" onclick="window.open('recipients.html?log_id=${data.id}', '_blank')">Number of people received aid: ${data.recipient_count}</button>
                             </div>
                         </li>
@@ -706,22 +706,22 @@
             editBtn.style.display = 'none';
         }
 
-        function editHistoryItem(itemId) {
-        editingLogId = itemId.replace('history-item-', '');
-        const currentSavedText = document.getElementById('text-' + itemId).innerText;
-        const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');
-
-        document.getElementById('supplies-input').value = currentSavedText;
-        document.getElementById('location-input').value = currentSavedLoc;
-        document.getElementById(itemId).remove();
-
-        const historyList = document.getElementById('history-list');
-        if (historyList.children.length === 0) {
-            historyList.innerHTML = `<li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;"><em>No supplies logged for this session yet.</em></li>`;
-        }
-
-        document.getElementById('supplies-input').focus();
-    }
+    //     function editHistoryItem(itemId) {
+    //     editingLogId = itemId.replace('history-item-', '');
+    //     const currentSavedText = document.getElementById('text-' + itemId).innerText;
+    //     const currentSavedLoc = document.getElementById('loc-' + itemId).innerText.replace('Location: ', '');
+    //
+    //     document.getElementById('supplies-input').value = currentSavedText;
+    //     document.getElementById('location-input').value = currentSavedLoc;
+    //     document.getElementById(itemId).remove();
+    //
+    //     const historyList = document.getElementById('history-list');
+    //     if (historyList.children.length === 0) {
+    //         historyList.innerHTML = `<li class="history-item" id="placeholder-history" style="border-left-color: #ccc; color: #888; justify-content: center; flex-direction: row;"><em>No supplies logged for this session yet.</em></li>`;
+    //     }
+    //
+    //     document.getElementById('supplies-input').focus();
+    // }
     </script>
 
 </body>
