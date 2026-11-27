@@ -54,10 +54,53 @@
             background-color: #d4edda;
         }
 
+
+
+
         .scanner-banner.unlinked {
             border: 2px solid #dc3545;
             background-color: #f8d7da;
         }
+
+        .scanner-banner.duplicate-error {
+            border: 2px solid #dc3545;
+            background-color: #f8d7da;
+            animation: blinkRedBanner 0.4s ease-in-out 5;
+        }
+
+        .status-dot.error-light {
+            background-color: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.9);
+            animation: blinkRedLight 0.4s ease-in-out 5;
+        }
+
+        @keyframes blinkRedBanner {
+            0%, 100% {
+                background-color: #f8d7da;
+                border-color: #dc3545;
+                box-shadow: 0 0 0 rgba(220, 53, 69, 0);
+            }
+            50% {
+                background-color: #ff4d4d;
+                border-color: #a71d2a;
+                box-shadow: 0 0 20px rgba(220, 53, 69, 0.9);
+            }
+        }
+
+        @keyframes blinkRedLight {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 12px 4px rgba(220, 53, 69, 0.95);
+            }
+            50% {
+                opacity: 0.1;
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+            }
+        }
+
+
+
+
 
         .scanner-title {
             font-size: 1.3em;
@@ -401,7 +444,63 @@
             }
         }
 
+
+
+
+
+
+
+
+
+        let audioCtx = null;
+
+        function unlockAudio() {
+            try {
+                if (!audioCtx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    audioCtx = new AudioContextClass();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {
+                console.error('Audio initialization error:', e);
+            }
+        }
+
+        function playErrorBuzzer() {
+            try {
+                unlockAudio();
+                const now = audioCtx.currentTime;
+
+                // 5 buzzer beeps synced with the 5 red flashes (0.4s interval)
+                for (let i = 0; i < 5; i++) {
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    const startTime = now + i * 0.4;
+                    const stopTime = startTime + 0.22;
+
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(220, startTime);
+
+                    gainNode.gain.setValueAtTime(0.3, startTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, stopTime);
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    oscillator.start(startTime);
+                    oscillator.stop(stopTime);
+                }
+            } catch (e) {
+                console.error('Error playing buzzer sound:', e);
+            }
+        }
+
         function activateAssignSupply() {
+            unlockAudio(); // Unlocks browser audio on button click so the buzzer plays automatically on scan
+
             const banner = document.getElementById('scanner-banner');
             const title = document.getElementById('scanner-title');
             const details = document.getElementById('scanner-details');
@@ -420,6 +519,16 @@
             registerBtn.style.display = 'none';
             editBtn.style.display = 'none';
         }
+
+
+
+
+
+
+
+
+
+
 
         // --- Dev Testing Functions ---
         function simulateScanLinkCard() {
@@ -602,6 +711,10 @@
         // Start listening to the backend automatically every 1.5 seconds
         setInterval(pollScanner, 1500);
 
+
+
+
+
         function updateScannerBanner(scanData) {
             const banner = document.getElementById('scanner-banner');
             const title = document.getElementById('scanner-title');
@@ -615,7 +728,6 @@
             banner.className = 'scanner-banner';
 
             if (scanData.is_linked) {
-                banner.classList.add('linked');
                 registerBtn.style.display = 'none';
                 editBtn.style.display = 'none';
 
@@ -625,17 +737,20 @@
 
                     if (topRecord) {
                         const suppliesText = topRecord.querySelector('.history-text').innerText.trim();
+                        const locationText = topRecord.querySelector('.history-location').innerText.replace('Location: ', '').trim();
+                        const adminLogId = topRecord.id.replace('history-item-', '');
 
-                        title.innerHTML = '✅ Supply Assigned!';
+                        title.innerHTML = '<span class="status-dot" id="status-dot"></span> Checking Supply Record...';
                         details.innerHTML = `<strong>Full name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
 
-                        // Send UID to Django to attach the user to the latest AdminSetReliefLog
-                        assignSupplyToUser(scanData.uid, suppliesText);
+                        // Send UID to Django to check for duplicates and attach the user
+                        assignSupplyToUser(scanData.uid, suppliesText, locationText, adminLogId);
                         // Notice clearAssignSupplyBtn() is NOT called here, so the button stays green!
                     } else {
                         alert("No supplies in the Recent Saved Records to assign! Please save a supply first.");
                     }
                 } else {
+                    banner.classList.add('linked');
                     title.innerHTML = '✅ Card Recognized';
                     details.innerHTML = `<strong>Full name:</strong> ${scanData.name} <br> <small style="color: #666;">UID: ${scanData.uid}</small>`;
                     editBtn.style.display = 'inline-block';
@@ -667,10 +782,12 @@
             })
             .then(response => response.json())
             .then(data => {
+                const banner = document.getElementById('scanner-banner');
                 const title = document.getElementById('scanner-title');
                 const details = document.getElementById('scanner-details');
 
                 if (data.status === 'success') {
+                    banner.className = 'scanner-banner linked';
                     title.innerHTML = '✅ Supply Assigned!';
                     details.innerHTML += `<br><span style="color: #28a745; font-weight: bold; display: inline-block; margin-top: 10px;">Assigned: ${supplies} (${location})</span>`;
 
@@ -678,17 +795,35 @@
                     if (countBtn) {
                         countBtn.innerText = `Number of people received aid: ${data.recipient_count}`;
                     }
+                } else if (data.status === 'duplicate') {
+                    // Reset class and force reflow so the 5-flash animation always replays on repeat taps
+                    banner.className = 'scanner-banner';
+                    void banner.offsetWidth;
+                    banner.classList.add('duplicate-error');
+
+                    title.innerHTML = '<span class="status-dot error-light"></span> ❌ Duplicate Claim Detected!';
+                    details.innerHTML += `<br><span style="color: #a71d2a; font-weight: bold; display: inline-block; margin-top: 10px;">${data.message}</span>`;
+
+                    playErrorBuzzer();
                 } else {
+                    banner.className = 'scanner-banner unlinked';
                     title.innerHTML = '❌ Assignment Failed';
-                    alert("Database Error: " + data.message);
+                    details.innerHTML += `<br><span style="color: #a71d2a; font-weight: bold; display: inline-block; margin-top: 10px;">${data.message}</span>`;
                 }
             })
             .catch(error => {
                 console.error('Error assigning supply:', error);
+                const banner = document.getElementById('scanner-banner');
+                banner.className = 'scanner-banner unlinked';
                 document.getElementById('scanner-title').innerHTML = '❌ Network Error';
                 alert("Network Error: Could not link supply to user.");
             });
         }
+
+
+
+
+
 
         function resetScanner() {
             const banner = document.getElementById('scanner-banner');

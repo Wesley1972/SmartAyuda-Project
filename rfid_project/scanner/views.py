@@ -38,6 +38,25 @@ def assign_supply(request):
             if not latest_supply:
                 return JsonResponse({'status': 'error', 'message': 'No saved supplies found.'}, status=400)
 
+
+
+
+
+
+
+
+
+            # Check if this user already received the latest supply record
+            already_claimed = (
+                       latest_supply.users.filter(id=owner.id).exists()
+                       or AidClaim.objects.filter(relief_log=latest_supply, user=owner).exists()
+            )
+            if already_claimed:
+                return JsonResponse({
+                    'status': 'duplicate',
+                    'message': f'{owner.full_name} has already received this supply!'
+                }, status=409)
+
             latest_supply.users.add(owner)
             AidClaim.objects.get_or_create(relief_log=latest_supply, user=owner)
             return JsonResponse({
@@ -46,6 +65,13 @@ def assign_supply(request):
                 'recipient_count': latest_supply.users.count(),
                 'message': 'Supply linked to user successfully!'
             })
+
+
+
+
+
+
+
 
         except RFIDCard.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Card not found in database.'}, status=404)
