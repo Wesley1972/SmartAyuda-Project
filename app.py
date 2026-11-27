@@ -7,8 +7,8 @@ ARDUINO_PORT = 'COM5'
 BAUD_RATE = 115200
 
 # Live or Testing ------------------------------------------------------------------
-DJANGO_SERVER_URL = 'https://wesley1crabajales.pythonanywhere.com/api/record_scan/'
-# DJANGO_SERVER_URL = 'http://127.0.0.1:8000/api/record_scan/'
+# DJANGO_SERVER_URL = 'https://wesley1crabajales.pythonanywhere.com/api/record_scan/'
+DJANGO_SERVER_URL = 'http://127.0.0.1:8000/api/record_scan/'
 # Live or Testing ------------------------------------------------------------------
 
 def listen_to_arduino():
@@ -98,3 +98,5 @@ if __name__ == '__main__':
 # Live or Testing ------------------------------------------------------------------
 
 # Must paste to web url: http://127.0.0.1:8000/admin_portal.html
+# Must run local server: Terminal -> python manage.py runserver
+#                                    python app.py
